@@ -2,9 +2,6 @@ function AlienCommanderSkinsMixin:__initmixin()
     self.structureVariant = kDefaultAlienStructureVariant
     self.tunnelVariant = kDefaultAlienTunnelVariant
     self.drifterVariant = kDefaultAlienDrifterVariant
-    Log("TESTING")
-    Log(kDefaultAlienDrifterVariant)
-    Log("TESTING")
     self.harvesterVariant = kDefaultHarvesterVariant
     self.eggVariant = kDefaultEggVariant
     self.cystVariant = kDefaultAlienCystVariant

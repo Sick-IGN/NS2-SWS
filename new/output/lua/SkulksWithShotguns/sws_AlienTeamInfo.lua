@@ -1,14 +1,14 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
-//
-// lua/AlienTeamInfo.lua
-//
-// AlienTeamInfo is used to sync information about a team to clients.
-// Only alien team players (and spectators) will receive the information about number
-// of shells, spurs or veils.
-//
-// Created by Andreas Urwalek (brianc@unknownworlds.com)
-//
-// ========= For more information, visit us at http://www.unknownworlds.com =====================
+-- ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+--
+-- lua/AlienTeamInfo.lua
+--
+-- AlienTeamInfo is used to sync information about a team to clients.
+-- Only alien team players (and spectators) will receive the information about number
+-- of shells, spurs or veils.
+--
+-- Created by Andreas Urwalek (brianc@unknownworlds.com)
+--
+-- ========= For more information, visit us at http:--www.unknownworlds.com =====================
 
 Script.Load("lua/TeamInfo.lua")
 Script.Load("lua/NS2Utility.lua")
@@ -57,7 +57,7 @@ function ShotgunAlienTeamInfo:Reset()
 end
 
 
-// determine who is carrying the enemy flag for passed team.
+-- determine who is carrying the enemy flag for passed team.
 local function GetFlagCarrierFor(team)
     local flag = GetEnemyTeam(team):GetTeamFlag()
     if flag ~= nil then
@@ -77,7 +77,7 @@ function ShotgunAlienTeamInfo:OnUpdate(deltaTime)
     if team then
         self.points      = team.points or 0
         self.enemyPoints = GetEnemyTeam(team).points or 0
-        self.eggCount    = team:GetTeamResources() // We work with teamres instead.
+        self.eggCount    = team:GetTeamResources() -- We work with teamres instead.
         self.teamMode    = kTeamModeEnabled
 		if GetGamerules():GetGameStarted() then
 			self.secondsRemaining = math.max( 0, kTeamModeTimelimit - (math.floor( Shared.GetTime() ) - GetGameInfoEntity():GetStartTime()) )

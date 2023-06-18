@@ -1,5 +1,5 @@
-// We override NS2Gamerules to avoid having to override the NS2 gameserver.
-// @todo port this all to our own gamerules class.
+-- We override NS2Gamerules to avoid having to override the NS2 gameserver.
+-- @todo port this all to our own gamerules class.
 
 
 
@@ -10,7 +10,7 @@ if Server then
     local kCaptureTheGorgeTimeLimit = (60*10) + 35
 
     function NS2Gamerules:GetCanSpawnImmediately()
-        // we want to force respawn via spawners.
+        -- we want to force respawn via spawners.
         return false
     end
 
@@ -20,19 +20,19 @@ if Server then
 
 
     function NS2Gamerules:BuildTeam(teamType)
-        // TEAM MODE - we always want aliens, because only aliens are shotgun worthy!
+        -- TEAM MODE - we always want aliens, because only aliens are shotgun worthy!
         return AlienTeam()
     end
 
-    // Force joining aliens.
+    -- Force joining aliens.
     function NS2Gamerules:GetCanJoinTeamNumber(teamNumber)
 
-        // TEAM MODE - we don t care about the teams in team mode!
+        -- TEAM MODE - we don t care about the teams in team mode!
         if kTeamModeEnabled then
             return true
         end
 
-       // DEATMATCH - force team 2
+       -- DEATHMATCH - force team 2
        return  (teamNumber == self.team2:GetTeamNumber())
     end
 
@@ -76,12 +76,12 @@ if Server then
                     SendEventMessage(self.team2, kEventMessageTypes.StartDeathmatchGame)
                 end
 
-                // Reset disconnected player resources when a game starts to prevent shenanigans.
+                -- Reset disconnected player resources when a game starts to prevent shenanigans.
                 self.disconnectedPlayerResources = { }
 
             end
 
-            // On end game, check for map switch conditions
+            -- On end game, check for map switch conditions
             if state == kGameState.Team1Won or state == kGameState.Team2Won then
 
                 if MapCycle_TestCycleMap() then
@@ -117,7 +117,7 @@ if Server then
     function NS2Gamerules:CheckGameStart()
 
 
-        if not (sws_team_ready[kAlienTeamType] == true and sws_team_ready[kMarineTeamType] == true) then
+        if kTeamModeEnabled and not (sws_team_ready[kAlienTeamType] == true and sws_team_ready[kMarineTeamType] == true) then
             if self:GetGameState() ~= kGameState.NotStarted then
                 if not SNTL_LimitCallFrequency("rdy_message_warning", 30) then
                     if sws_team_ready[kAlienTeamType] then
@@ -159,7 +159,7 @@ if Server then
 
         elseif self:GetGameState() < kGameState.PreGame then
 
-            // Start game when we have /any/ players in the game.
+            -- Start game when we have /any/ players in the game.
 
             if  (playerCount > 0) then
 			-- Log(self:GetGameState())
@@ -168,7 +168,7 @@ if Server then
                     self.score = 0
                     Shared:ShotgunMessage("Lock and load!")
 
-                    // @todo find a good location for this.
+                    -- @todo find a good location for this.
                 end
             end
 
@@ -184,7 +184,7 @@ if Server then
 
         Log("-- %d / %d", playerCount, new_kAlienSpawnTime)
         if kTeamModeEnabled then
-            // team mode requires longer spawn time.
+            -- team mode requires longer spawn time.
             new_kAlienSpawnTime = (playerCount < (5+5)) and kFastTeamAlienSpawnTime or kTeamAlienSpawnTime
            if new_kAlienSpawnTime ~= kAlienSpawnTime then
                 if new_kAlienSpawnTime == kTeamAlienSpawnTime then
@@ -284,8 +284,6 @@ if Server then
 
             if success then
 
-                self.sponitor:OnJoinTeam(newPlayer, team)
-
                 local newPlayerClient = Server.GetOwner(newPlayer)
                 if oldPlayerWasSpectating then
                     newPlayerClient:SetSpectatingPlayer(nil)
@@ -329,17 +327,20 @@ if Server then
 
     function NS2Gamerules:OnClientConnect(client)
         local player = Gamerules.OnClientConnect(self, client) -- creates player entity
-
-        // warn players they are not getting a typical match.
-        // Wouldn t want to confuse the greens.
+        -- warn players they are not getting a typical match.
+        -- Wouldn t want to confuse the greens.
         player:ShotgunMessage("You are playing custom mod: Skulks With Shotguns!")
         player:ShotgunMessage("This is not Vanilla NS2! Have fun!")
-        
+        -- Move spectators into the spectator team
+        if client:GetIsSpectator() then
+            self:JoinTeam(player, kSpectatorIndex, true)
+        end
+
         return player
     end
 
     function NS2Gamerules:GetPregameLength()
-        // we have no need for a pre-game.
+        -- we have no need for a pre-game.
         return 0
     end
 
@@ -373,6 +374,7 @@ if Server then
 
         if self:GetGameState() == kGameState.PreGame then
 
+
                 if kTeamModeEnabled then
                     self.team1:PlayPrivateTeamSound(kSfxCaptureStart)
                     self.team2:PlayPrivateTeamSound(kSfxCaptureStart)
@@ -383,14 +385,13 @@ if Server then
 
                 ResetPlayerScores()
                 self:SetGameState(kGameState.Started)
-                self.sponitor:OnStartMatch()
                 self.playerRanking:StartGame()
 
         end
 
     end
 
-    // returns number of living players on team.
+    -- returns number of living players on team.
     local function GetNumAlivePlayers(self)
         local numPlayers = 0
 
@@ -404,7 +405,7 @@ if Server then
         return numPlayers
     end
 
-	//returns the name of the last surviving player
+	--returns the name of the last surviving player
 	local function GetSurvivorName(self)
         local name = ""
 
@@ -465,16 +466,15 @@ if Server then
             self.team1:ClearRespawnQueue()
             self.team2:ClearRespawnQueue()
 
-            // Clear out Draw Game window handling
+            -- Clear out Draw Game window handling
             self.team1Lost = nil
             self.team2Lost = nil
             self.timeDrawWindowEnds = nil
 
-            // Automatically end any performance logging when the round has ended.
+            -- Automatically end any performance logging when the round has ended.
             Shared.ConsoleCommand("p_endlog")
 
             if winningTeam then
-                --self.sponitor:OnEndMatch(winningTeam)
                 self.playerRanking:EndGame(winningTeam)
             end
             TournamentModeOnGameEnd()
@@ -491,24 +491,24 @@ if Server then
 
             if kTeamModeEnabled then
 
-                // no more living players on team, and out of spawns? game lost/deathmatch over!
+                -- no more living players on team, and out of spawns? game lost/deathmatch over!
                 local team1Won = (self.team1:GetPoints() >= kCaptureWinPoints)
                 local team2Won = (self.team2:GetPoints() >= kCaptureWinPoints)
 
-                // time based mode.
+                -- time based mode.
                 if not team1Won and not team2Won and kTeamModeTimelimit > 0 then
 
                     if self:GetGameLengthTime() >= kTeamModeTimelimit then
                         team1Won = self.team1:GetPoints() > self.team2:GetPoints()
                         team2Won = self.team1:GetPoints() < self.team2:GetPoints()
 
-                        // draw condition.
+                        -- draw condition.
                         if (team1Won == false) and (team2Won == false) then
                             Shared:ShotgunMessage("Neither Team Wins!")
                             self:DrawGame()
                         end
                     else
-                        // timer still ticking.
+                        -- timer still ticking.
                         team1Won = false
                         team2Won = false
                     end
@@ -527,7 +527,7 @@ if Server then
                     self:EndGame(self.team2)
                 end
             else
-                // no foes remain.
+                -- no foes remain.
                 local noFoesRemain = (GetNumAlivePlayers(self.team2) <= 1) and (not self.team2:GetHasAbilityToRespawn())
                 if noFoesRemain then
                     Shared:ShotgunMessage("Total Decimation!")
@@ -540,7 +540,7 @@ if Server then
                 end
             end
 
-            // game is taking too long.
+            -- game is taking too long.
             if self.timeLastGameEndCheck == nil or (Shared.GetTime() > self.timeLastGameEndCheck + kGameEndCheckInterval) then
 
                 if (not kTeamModeEnabled and (self.timeSinceGameStateChanged >= kDeathmatchTimeLimit)) or
@@ -562,13 +562,13 @@ if Server then
 
         Gamerules.OnMapPostLoad(self)
 
-        // Now allow script actors to hook post load
+        -- Now allow script actors to hook post load
         local allScriptActors = Shared.GetEntitiesWithClassname("ScriptActor")
         for index, scriptActor in ientitylist(allScriptActors) do
             scriptActor:OnMapPostLoad()
         end
 
-        // fall back on resource points as spawns if none exist for the shadow team.
+        -- fall back on resource points as spawns if none exist for the shadow team.
         if table.maxn(Server.shadowSpawnList) <= 0 then
             Shared:ShotgunWarning("Map lacks shadow_spawn entities on the map! Falling back on ResourcePoints.")
             for index, entity in ientitylist(Shared.GetEntitiesWithClassname("ResourcePoint")) do
@@ -580,7 +580,7 @@ if Server then
             end
         end
 
-        // fall back on resource points as spawns if none exist for the vanilla team.
+        -- fall back on resource points as spawns if none exist for the vanilla team.
         if table.maxn(Server.vanillaSpawnList) <= 0 then
             Shared:ShotgunWarning("Map lacks vanilla_spawn entitities on the map! Falling back on ResourcePoints.")
             for index, entity in ientitylist(Shared.GetEntitiesWithClassname("ResourcePoint")) do
@@ -596,7 +596,7 @@ if Server then
 	function NS2Gamerules:CheckForNoCommander(onTeam, commanderType) end
 	function NS2Gamerules:UpdateAutoTeamBalance(dt) end
 	function NS2Gamerules:KillEnemiesNearCommandStructureInPreGame(timePassed) end
-    // disable these methods in OnUpdate, we don t want them to trigger.
+    -- disable these methods in OnUpdate, we don t want them to trigger.
     local function DisabledUpdateAutoTeamBalance(self, dt) end
     local function DisabledCheckForNoCommander(self, onTeam, commanderType) end
     local function DisabledKillEnemiesNearCommandStructureInPreGame(self, timePassed) end

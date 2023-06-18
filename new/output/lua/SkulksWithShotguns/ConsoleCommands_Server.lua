@@ -41,7 +41,7 @@ function OnCommandReady(client)
             -- else
             --     Shared:ShotgunMessage(string.format("%s has %s for %s(%d) (round not reset, %ds time limit reached)",
             --                                         player:GetName(),
-            --                                         (sws_team_ready[teamNumber] and "readied" or "unredied"),
+            --                                         (sws_team_ready[teamNumber] and "readied" or "unreadied"),
             --                                         teamNumber == kAlienTeamType and "Aliens" or "Frontiersmen",
             --                                         teamNumber,
             --                                         maxResetReadyTime)
@@ -53,7 +53,7 @@ function OnCommandReady(client)
             sws_team_ready[teamNumber] = not sws_team_ready[teamNumber]
             Shared:ShotgunMessage(string.format("%s has %s for %s(%d)",
                                                 player:GetName(),
-                                                (sws_team_ready[teamNumber] and "readied" or "unredied"),
+                                                (sws_team_ready[teamNumber] and "readied" or "unreadied"),
                                                 teamNumber == kAlienTeamType and "Aliens" or "Frontiersmen",
                                                 teamNumber)
             )

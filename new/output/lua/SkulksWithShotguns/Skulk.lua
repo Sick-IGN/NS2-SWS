@@ -1,16 +1,17 @@
-// ======= Copyright (c) 2003-2013, Unknown Worlds Entertainment, Inc. All rights reserved. =====
-//
-// lua\Skulk.lua
-//
-//    Created by:   Charlie Cleveland (charlie@unknownworlds.com)
-//                  Andreas Urwalek (andi@unknownworlds.com)
-//
-// ========= For more information, visit us at http://www.unknownworlds.com =====================
+-- ======= Copyright (c) 2003-2013, Unknown Worlds Entertainment, Inc. All rights reserved. =====
+--
+-- lua\Skulk.lua
+--
+--    Created by:   Charlie Cleveland (charlie@unknownworlds.com)
+--                  Andreas Urwalek (andi@unknownworlds.com)
+--
+-- ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 Script.Load("lua/Utility.lua")
 Script.Load("lua/Weapons/Alien/BiteLeap.lua")
 Script.Load("lua/Weapons/Alien/Parasite.lua")
 Script.Load("lua/Weapons/Alien/XenocideLeap.lua")
+Script.Load("lua/Weapons/Alien/ReadyRoomLeap.lua")
 Script.Load("lua/Alien.lua")
 Script.Load("lua/Mixins/BaseMoveMixin.lua")
 Script.Load("lua/Mixins/GroundMoveMixin.lua")
@@ -47,7 +48,7 @@ local kBlueViewModelName = PrecacheAsset("models/alien/skulk/skulk_vblu.model")
 -- SWS END
 local kSkulkAnimationGraph = PrecacheAsset("models/alien/skulk/skulk.animation_graph")
 
-// Balance, movement, animation
+-- Balance, movement, animation
 Skulk.kViewOffsetHeight = .55
 
 Skulk.kHealth = kSkulkHealth
@@ -59,15 +60,16 @@ local kLeapVerticalForce = 10.8
 local kLeapTime = 0.2
 local kLeapForce = 7.6
 
-local kMaxSpeed = 7.0
+Skulk.kMaxSpeed = 7.25
+Skulk.kSneakSpeedModifier = 0.5931035
 
-local kMass = 45 // ~100 pounds
-// How big the spheres are that are casted out to find walls, "feelers".
-// The size is calculated so the "balls" touch each other at the end of their range
+local kMass = 45 -- ~100 pounds
+-- How big the spheres are that are casted out to find walls, "feelers".
+-- The size is calculated so the "balls" touch each other at the end of their range
 local kNormalWallWalkFeelerSize = 0.25
 local kNormalWallWalkRange = 0.3
 
-// jump is valid when you are close to a wall but not attached yet at this range
+-- jump is valid when you are close to a wall but not attached yet at this range
 local kJumpWallRange = 0.4
 local kJumpWallFeelerSize = 0.1
 
@@ -75,10 +77,26 @@ Skulk.kXExtents = .45
 Skulk.kYExtents = .45
 Skulk.kZExtents = .45
 
-local kWallJumpInterval = 0.4
-local kWallJumpForce = 5.2 // scales down the faster you are
-local kMinWallJumpForce = 0.1
-local kVerticalWallJumpForce = 4.3
+Skulk.kMaxSneakOffset = 0 --0.55
+
+Skulk.kWallJumpInterval = 0.4
+Skulk.kWallJumpForce = 6.4 -- scales down the faster you are
+Skulk.kMinWallJumpForce = 0.1
+Skulk.kVerticalWallJumpForce = 4.3
+
+Skulk.kMinBunnyHopForce = 0.05
+Skulk.kBunnyHopForce = 7
+Skulk.kVerticalBunnyHopForce = 2.15
+Skulk.kBunnyHopMaxSpeed = 8.5
+Skulk.kBunnyHopMaxSpeedCelerityBonus = 0.6
+Skulk.kBunnyHopMaxGroundTouchDuration = 0.5
+
+Skulk.kWallJumpMaxSpeed = 11
+Skulk.kWallJumpMaxSpeedCelerityBonus = 1.2
+
+Skulk.kAdrenalineEnergyRecuperationRate = 15.0
+
+Skulk.kMaxJumpComboLifetime = 1.5 -- seconds before the next jump is considered a "first" jump.
 
 if Server then
     Script.Load("lua/Skulk_Server.lua", true)
@@ -97,6 +115,11 @@ local networkVars =
     jumpLandSpeed = "private compensated float",
     dashing = "compensated boolean",    
     timeOfLastPhase = "private time",
+    -- sneaking (movement modifier) skulks starts to trail their body behind them
+    sneakOffset = "compensated interpolated float (0 to 1 by 0.04)",
+
+    -- true if upgrades have been set at respawn
+    autopickedUpgrades = "boolean"
 }
 
 AddMixinNetworkVars(BaseMoveMixin, networkVars)
@@ -160,10 +183,10 @@ function Skulk:OnInitialized()
 
     Alien.OnInitialized(self)
     
-    // Note: This needs to be initialized BEFORE calling SetModel() below
-    // as SetModel() will call GetHeadAngles() through SetPlayerPoseParameters()
-    // which will cause a script error if the Skulk is wall walking BEFORE
-    // the Skulk is initialized on the client.
+    -- Note: This needs to be initialized BEFORE calling SetModel() below
+    -- as SetModel() will call GetHeadAngles() through SetPlayerPoseParameters()
+    -- which will cause a script error if the Skulk is wall walking BEFORE
+    -- the Skulk is initialized on the client.
     self.currentWallWalkingAngles = Angles(0.0, 0.0, 0.0)
     
     self:SetModel(self:GetVariantModel(), kSkulkAnimationGraph)
@@ -192,7 +215,7 @@ function Skulk:OnInitialized()
 
     -- SWS START
     if Server then 
-        // Skulks With Shotguns - Add a babbler-shotgun on head node (don't ask). XD
+        -- Skulks With Shotguns - Add a babbler-shotgun on head node (don't ask). XD
         self.freeAttachPoints = { "babbler_attach3" }
         local babbler = CreateEntity(Babbler.kMapName, self:GetOrigin(), self:GetTeamNumber())    
         self:AttachBabbler(babbler)
@@ -269,7 +292,7 @@ function Skulk:OnLeap()
     local forwardVec = self:GetViewAngles():GetCoords().zAxis
     local newVelocity = velocity + GetNormalizedVectorXZ(forwardVec) * kLeapForce
     
-    // Add in vertical component.
+    -- Add in vertical component.
     newVelocity.y = kLeapVerticalForce * forwardVec.y + kLeapVerticalForce * 0.5 + ConditionalValue(velocity.y < 0, velocity.y, 0)
     
     self:SetVelocity(newVelocity)
@@ -352,7 +375,7 @@ function Skulk:GetTriggerLandEffect()
     return Alien.GetTriggerLandEffect(self) and (not self.movementModiferState or xzSpeed > 7)
 end
 
-// Update wall-walking from current origin
+-- Update wall-walking from current origin
 function Skulk:PreUpdateMove(input, runningPrediction)
 
     PROFILE("Skulk:PreUpdateMove")
@@ -378,8 +401,8 @@ function Skulk:PreUpdateMove(input, runningPrediction)
 
     if self.wallWalking then
 
-        // Most of the time, it returns a fraction of 0, which means
-        // trace started outside the world (and no normal is returned)           
+        -- Most of the time, it returns a fraction of 0, which means
+        -- trace started outside the world (and no normal is returned)           
         local goal = self:GetAverageWallWalkingNormal(kNormalWallWalkRange, kNormalWallWalkFeelerSize)
         if goal ~= nil then
         
@@ -393,7 +416,7 @@ function Skulk:PreUpdateMove(input, runningPrediction)
     end
     
     if not self:GetIsWallWalking() then
-        // When not wall walking, the goal is always directly up (running on ground).
+        -- When not wall walking, the goal is always directly up (running on ground).
         self.wallWalkingNormalGoal = Vector.yAxis
     end
 
@@ -495,7 +518,7 @@ function Skulk:GetMaxSpeed(possible)
     end
 
     -- SWS START
-    // slow down flag bearing skulks just a tad so they can be effectively chased
+    -- slow down flag bearing skulks just a tad so they can be effectively chased
     if self:IsBearingFlag() then
         maxspeed = maxspeed * kSkulkSpeedFactorWhileCarryGorge
     end
@@ -539,7 +562,7 @@ function Skulk:ModifyJump(input, velocity, jumpVelocity)
     
         local direction = input.move.z == -1 and -1 or 1
     
-        // we add the bonus in the direction the move is going
+        -- we add the bonus in the direction the move is going
         local viewCoords = self:GetViewAngles():GetCoords()
         self.bonusVec = viewCoords.zAxis * direction
         self.bonusVec.y = 0
@@ -568,8 +591,8 @@ function Skulk:ModifyJump(input, velocity, jumpVelocity)
     
 end
 
-// The Skulk movement should factor in the vertical velocity
-// only when wall walking.
+-- The Skulk movement should factor in the vertical velocity
+-- only when wall walking.
 function Skulk:GetMoveSpeedIs2D()
     return not self:GetIsWallWalking()
 end
@@ -655,7 +678,7 @@ function Skulk:OnUpdate(deltaTime)
     
     Alien.OnUpdate(self, deltaTime)
     
-    //UpdateDashEffects(self)
+    --UpdateDashEffects(self)
     
 end
 
@@ -671,7 +694,7 @@ function Skulk:OnProcessMove(input)
 
     Alien.OnProcessMove(self, input)
     
-    //UpdateDashEffects(self)
+    --UpdateDashEffects(self)
 
 end
 

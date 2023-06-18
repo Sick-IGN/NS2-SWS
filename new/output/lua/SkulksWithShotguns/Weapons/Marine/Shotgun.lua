@@ -1,4 +1,4 @@
-// Replace shotty. We don't make a separate weapon cause it's a pain in the butt just starting out modding!
+-- Replace shotty. We don't make a separate weapon cause it's a pain in the butt just starting out modding!
 
 Script.Load("lua/Weapons/Alien/Ability.lua")
 Script.Load("lua/Weapons/Alien/LeapMixin.lua")
@@ -12,10 +12,10 @@ local kAnimationGraph = PrecacheAsset("models/alien/skulk/skulk_view.animation_g
 Shotgun.kActivity = enum { 'None', 'Primary' }
 
 
-kShotgunHUDSlot = 3
+kShotgunHUDSlot = 1
 
 local kBulletSize = 0.016
-local kShotgunSize = 0.15 // size of parasite blob
+local kShotgunSize = 0.15 -- size of parasite blob
 local kSpreadDistance = 10
 local kStartOffset = 0
 local kSpreadVectors =
@@ -45,7 +45,7 @@ local kSpreadVectors =
 }
 
 local kMuzzleEffect = PrecacheAsset("cinematics/marine/shotgun/muzzle_flash.cinematic")
-local kMuzzleAttachPoint = "Tongue01"
+local kMuzzleAttachPoint = "CamBone" --Changed from Tongue01
 
 local networkVars =
 {
@@ -107,14 +107,14 @@ function Shotgun:OnProcessMove(input)
 
     Ability.OnProcessMove(self, input)
     
-    // We need to clear this out in OnProcessMove (rather than ProcessMoveOnWeapon)
-    // since this will get called after the view model has been updated from
-    // Player:OnProcessMove. 
+    -- We need to clear this out in OnProcessMove (rather than ProcessMoveOnWeapon)
+    -- since this will get called after the view model has been updated from
+    -- Player:OnProcessMove. 
     self.activity = Shotgun.kActivity.None
 
 end
 
-// Only play weapon effects every other bullet to avoid sonic overload
+-- Only play weapon effects every other bullet to avoid sonic overload
 function Shotgun:GetTracerEffectFrequency()
     return 0.5
 end
@@ -125,7 +125,7 @@ function Shotgun:PerformShotgunFire(player)
 
     local shootCoords = viewAngles:GetCoords()
 
-    // Filter ourself out of the trace so that we don't hit ourselves.
+    -- Filter ourself out of the trace so that we don't hit ourselves.
     local filter = EntityFilterTwo(player, self)
     local range = self:GetRange()
     
@@ -133,10 +133,10 @@ function Shotgun:PerformShotgunFire(player)
         range = 5
     end
     
-    // disable umbra upon firing a shotty.
+    -- disable umbra upon firing a shotty.
     if Server then      
         if ( HasMixin(player, "Umbra") ) then
-             // disable umbra.
+             -- disable umbra.
              player.dragsUmbra = false
              player.timeUmbraExpires = 0
         end
@@ -145,9 +145,11 @@ function Shotgun:PerformShotgunFire(player)
     local numberBullets = self:GetBulletsPerShot()
     local startPoint = player:GetEyePos()
 
-    self:TriggerEffects("shotgun_attack_sound")
-    self:TriggerEffects("shotgun_attack")
-        
+	-- SWS START use new effects with different attach points
+    self:TriggerEffects("sws_attack_sound")
+    self:TriggerEffects("sws_attack")
+	-- SWS END        
+
     -- SWS START: Determine if we should cause explosive trauma to anyone hit by pellets, before the target gets killed.
     if Server then
     
@@ -184,7 +186,7 @@ function Shotgun:PerformShotgunFire(player)
         for entityId, value in pairs(totalDamage) do
             local entity = Shared.GetEntity(entityId)
             if (entity ~= nil) and HasMixin(entity, "ExplosiveTrauma") then
-                // prime if all pellets but one strike the target (perfect hit).
+                -- prime if all pellets but one strike the target (perfect hit).
                 entity:SetPrimed(value >= kShotgunDamage * (totalBullets-6))
             end
         end
@@ -216,7 +218,7 @@ function Shotgun:PerformShotgunFire(player)
         
         local damage = 0
             
-        // don't damage 'air'..
+        -- don't damage 'air'..
         if trace.fraction < 1 or GetIsVortexed(player) then
         
             local direction = (trace.endPoint - startPoint):GetUnit()

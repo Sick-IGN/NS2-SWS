@@ -1,4 +1,4 @@
-// added killstreak property.
+-- added killstreak property.
 
 
 
@@ -137,7 +137,7 @@ end
 
 function ScoringMixin:AddScore(points, res, wasKill)
 
-    // Should only be called on the Server.
+    -- Should only be called on the Server.
     if Server then
     
         -- Tell client to display cool effect.
@@ -517,7 +517,7 @@ function ScoringMixin:AddDeaths()
         self.deaths = 0
     end
 
-     // reset killstreak
+     -- reset killstreak
     self.killstreak = 0
     self.deaths = Clamp(self.deaths + 1, 0, kMaxDeaths)
     

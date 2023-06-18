@@ -1,12 +1,12 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
-//
-// lua\DeathTrigger.lua
-//
-//    Created by:   Brian Cronin (brian@unknownworlds.com)
-//
-// Kill entity that touches this.
-//
-// ========= For more information, visit us at http://www.unknownworlds.com =====================
+-- ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+--
+-- lua\DeathTrigger.lua
+--
+--    Created by:   Brian Cronin (brian@unknownworlds.com)
+--
+-- Kill entity that touches this.
+--
+-- ========= For more information, visit us at http:--www.unknownworlds.com =====================
 
 Script.Load("lua/TechMixin.lua")
 Script.Load("lua/Mixins/SignalListenerMixin.lua")
@@ -27,14 +27,14 @@ local function KillEntity(self, entity)
     if Server then
         if HasMixin(entity, "Live") and entity:GetIsAlive() and entity:GetCanDie(true) then
 
-            // SWS - reset flag in kill zones.        
+            -- SWS - reset flag in kill zones.        
             if HasMixin(entity,"Flagbearer") then
                  if entity:GetFlag() ~= nil then
                      entity:GetFlag():DetachReset()
                  end
             end    
         
-            // SWS - support for team kill triggers.
+            -- SWS - support for team kill triggers.
             if ( self.teamNumber <= 0 ) or ( self.teamNumber == entity:GetTeamNumber() ) then
             
                 local direction = GetNormalizedVector(entity:GetModelOrigin() - self:GetOrigin())
@@ -42,7 +42,7 @@ local function KillEntity(self, entity)
             end
         end
         
-        // drop flag in killzone.
+        -- drop flag in killzone.
         if entity:isa("Flag") then
             if entity:GetCarrier() ~= nil then 
                 entity:DetachReset()

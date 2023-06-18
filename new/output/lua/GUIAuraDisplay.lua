@@ -1,12 +1,12 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
-//
-// lua/GUIAuraDisplay.lua
-//
-// Shows how many shells, spurs, veils you have
-//
-// Created by Andreas Urwalek (andi@unknownworlds.com)
-//
-// ========= For more information, visit us at http://www.unknownworlds.com =====================
+-- ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+--
+-- lua/GUIAuraDisplay.lua
+--
+-- Shows how many shells, spurs, veils you have
+--
+-- Created by Andreas Urwalek (andi@unknownworlds.com)
+--
+-- ========= For more information, visit us at http://www.unknownworlds.com =====================
 
 Shared.PrecacheSurfaceShader("shaders/GUIAura.surface_shader")
 
@@ -18,7 +18,7 @@ local kTexture = "ui/Gorge.dds"
 
 local kBlueColor = ColorIntToColor(kMarineTeamColor)
 local kBlueHighlightColor = Color(0.30, 0.69, 1, 1)
-local kRedColor = kRedColor--ColorIntToColor(kAlienTeamColor)
+local kRedColor = ColorIntToColor(kAlienTeamColor)
 local kRedHighlightColor = Color(1, 0.79, 0.23, 1)
 
 
@@ -40,8 +40,25 @@ function GUIAuraDisplay:Initialize()
 
     self.background = GetGUIManager():CreateGraphicItem()
     self.background:SetColor(Color(0,0,0,0))
-    
+
+    self.isThunderdomeEnabled = Shared.GetThunderdomeEnabled()
+
     self.icons = {}
+
+    self:SetIsVisible(not HelpScreen_GetHelpScreen():GetIsBeingDisplayed())
+
+end
+
+function GUIAuraDisplay:SetIsVisible(state)
+
+    self.visible = state
+    self.background:SetIsVisible(state)
+
+end
+
+function GUIAuraDisplay:GetIsVisible()
+
+    return self.visible
 
 end
 
@@ -58,6 +75,8 @@ end
 
 function GUIAuraDisplay:Update(deltaTime)
 
+    PROFILE("GUIAuraDisplay:Update")
+    
     local players = {}
     
     local player = Client.GetLocalPlayer()
@@ -68,7 +87,7 @@ function GUIAuraDisplay:Update(deltaTime)
         
         for _, enemyPlayer in ientitylist(Shared.GetEntitiesWithClassname("Flag")) do
         
-              // looking in the right direction but obscured?
+              -- looking in the right direction but obscured?
               if viewDirection:DotProduct(GetNormalizedVector(enemyPlayer:GetOrigin() - eyePos)) > 0 and
                  not GetCanSeeEntity(player, enemyPlayer) then
                    table.insert(players, enemyPlayer)    
@@ -132,7 +151,7 @@ function GUIAuraDisplay:Update(deltaTime)
         local worldPos = enemy:GetOrigin() + offset
         local screenPos = Client.WorldToScreen(worldPos)
         
-        // hide when too close.
+        -- hide when too close.
         if ( (worldPos - eyePos):GetLength() < 2 ) then
             icon:SetIsVisible(false)
         end

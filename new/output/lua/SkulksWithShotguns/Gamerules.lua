@@ -28,7 +28,7 @@ if Server then
 		end
 		
 		if(not success) then
-			Print("Gamerules:RespawnPlayer(player) - Couldn t find spawn point for player.")
+			Print("Gamerules:RespawnPlayer(player) - Couldn't find spawn point for player.")
 		end
 		
 		return success

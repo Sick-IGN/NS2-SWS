@@ -1,42 +1,34 @@
-// ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
-//
-// lua\GUIInsight_TopBar.lua
-//
-// Created by: Jon 'Huze' Hughes (jon@jhuze.com)
-//
-// Spectator: Displays team names and gametime
-//
-// ========= For more information, visit us at http://www.unknownworlds.com =====================
+-- ======= Copyright (c) 2003-2011, Unknown Worlds Entertainment, Inc. All rights reserved. =======
+--
+-- lua\GUIInsight_TopBar.lua
+--
+-- Created by: Jon 'Huze' Hughes (jon@jhuze.com)
+--
+-- Spectator: Displays team names and gametime
+--
+-- ========= For more information, visit us at http:--www.unknownworlds.com =====================
 
 class "GUIInsight_TopBar" (GUIScript)
 
 local isVisible
 
-local kBackgroundTexture = "ui/topbar.dds"
-local kIconTextureAlien = "ui/alien_commander_textures.dds"
-local kIconTextureMarine = "ui/marine_commander_textures.dds"
+local kBackgroundTexture = PrecacheAsset("ui/topbar.dds")
+local kIconTextureAlien = PrecacheAsset("ui/alien_commander_textures.dds")
+local kIconTextureMarine = PrecacheAsset("ui/marine_commander_textures.dds")
 local kTeamResourceIconCoords = {192, 363, 240, 411}
 local kResourceTowerIconCoords = {240, 363, 280, 411}
-local kBuildMenuTexture = "ui/buildmenu.dds"
+local kBiomassIconCoords = GetTextureCoordinatesForIcon(kTechId.Biomass)
+local kBuildMenuTexture = PrecacheAsset("ui/buildmenu.dds")
 
 local kTimeFontName = Fonts.kAgencyFB_Medium
-local kTimeFontScale = GUIScale(Vector(1, 1, 0))
 local kMarineFontName = Fonts.kAgencyFB_Medium
 local kAlienFontName = Fonts.kAgencyFB_Medium
-local kTeamFontScale = GUIScale(Vector(1, 1, 0))
-
-local kScoreFontScale = GUIScale(Vector(1.2, 1.2, 0))
 
 local kInfoFontName = Fonts.kAgencyFB_Small
-local kInfoFontScale = GUIScale(Vector(1, 1, 0))
 
-local kBackgroundSize = GUIScale(Vector(400, 35, 0))
-local kScoresSize = GUIScale(Vector(50,32, 0))
-local kTeamNameSize = GUIScale(Vector(150, 24, 0))
-local kIconSize = GUIScale(Vector(32, 32, 0))
-local kButtonSize = GUIScale(Vector(8, 8, 0))
-
-local kButtonOffset = GUIScale(Vector(0,20,0))
+local kIconSize
+local kButtonSize
+local kButtonOffset
 
 local background
 local gameTime
@@ -53,11 +45,14 @@ local alienTeamScore
 
 local marineNameBackground
 local marineTeamName
+local marineResources
 local marineExtractors
 
 local alienNameBackground
 local alienTeamName
+local alienResources
 local alienHarvesters
+local alienBiomass
 
 local function CreateIconTextItem(team, parent, position, texture, coords)
 
@@ -76,19 +71,18 @@ local function CreateIconTextItem(team, parent, position, texture, coords)
     icon:SetAnchor(GUIItem.Left, GUIItem.Top)
     icon:SetPosition(position)
     icon:SetTexture(texture)
-    if coords ~= nil then
-        icon:SetTexturePixelCoordinates(unpack(coords))
-    end
+    icon:SetTexturePixelCoordinates(GUIUnpackCoords(coords))
     background:AddChild(icon)
     
     local value = GUIManager:CreateTextItem()
     value:SetFontName(kInfoFontName)
-    value:SetScale(kInfoFontScale)
+    value:SetScale(GetScaledVector())
     value:SetAnchor(GUIItem.Left, GUIItem.Center)
     value:SetTextAlignmentX(GUIItem.Align_Min)
     value:SetTextAlignmentY(GUIItem.Align_Center)
     value:SetColor(Color(1, 1, 1, 1))
     value:SetPosition(position + Vector(kIconSize.x + GUIScale(5), 0, 0))
+    GUIMakeFontScale(value)
     background:AddChild(value)
     
     return value
@@ -124,9 +118,13 @@ local function GetTeamInfoStrings(teamInfo)
     
 end
 
-local kEggTexture = "ui/Gorge.dds"
+local kEggTexture = "ui/Gorge.dds
 
 function GUIInsight_TopBar:Initialize()
+
+    kIconSize = GUIScale(Vector(32, 32, 0))
+    kButtonSize = GUIScale(Vector(8, 8, 0))
+    kButtonOffset = GUIScale(Vector(0,20,0))
 
     isVisible = true
         
@@ -330,7 +328,7 @@ function GUIInsight_TopBar:Update(deltaTime)
         startTime = math.floor(Shared.GetTime()) - PlayerUI_GetGameStartTime()
     end
     
-    // quick hack to display round time instead.
+    -- quick hack to display round time instead.
     local timeRemaining = PlayerUI_GetSecondsRemaining()
     if timeRemaining > 0 then
         startTime = timeRemaining

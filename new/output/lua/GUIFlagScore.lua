@@ -18,7 +18,7 @@ local kNoEggsColor = Color(1, 0, 0, 1)
 local kWhite = Color(1, 1, 1, 1)
 local kBlueColor = ColorIntToColor(kMarineTeamColor)
 local kBlueHighlightColor = Color(0.30, 0.69, 1, 1)
-local kRedColor = kRedColor--ColorIntToColor(kAlienTeamColor)
+local kRedColor = ColorIntToColor(kAlienTeamColor)
 local kRedHighlightColor = Color(1, 0.79, 0.23, 1)
 
 local kEggTexture = "ui/Gorge.dds"
@@ -146,7 +146,7 @@ function GUIFlagScore:Initialize()
     self.timeRemaining:SetScale(kFontScale)
     self.timeRemaining:SetFontName(kTextFontName)        
     
-    ///////////////////
+    ------------------/
         
     self.teamIcon = GUIManager:CreateGraphicItem()
     self.teamIcon:SetAnchor(GUIItem.Middle, GUIItem.Top)
@@ -154,7 +154,7 @@ function GUIFlagScore:Initialize()
     self.teamIcon:SetTexture(kEggTexture)
     self.teamIcon:SetSize(kEggSize)
     
-    // Points
+    -- Points
     
     self.teamPoints = GUIManager:CreateTextItem()
     self.teamPoints:SetFontName(kTextFontName)
@@ -168,7 +168,7 @@ function GUIFlagScore:Initialize()
 
     self.teamIcon:AddChild(self.teamPoints)
     
-    // Carrier 
+    -- Carrier 
     
     self.teamCarrier = GUIManager:CreateTextItem()
     self.teamCarrier:SetFontName(kTextFontName)
@@ -182,7 +182,7 @@ function GUIFlagScore:Initialize()
     
     self.teamIcon:AddChild(self.teamCarrier)
     
-    // ENEMY
+    -- ENEMY
     
     self.enemyTeamIcon = GUIManager:CreateGraphicItem()
     self.enemyTeamIcon:SetAnchor(GUIItem.Middle, GUIItem.Top)
@@ -190,7 +190,7 @@ function GUIFlagScore:Initialize()
     self.enemyTeamIcon:SetTexture(kEggTexture)
     self.enemyTeamIcon:SetSize(kEggSize)
     
-    // Points
+    -- Points
     
     self.enemyTeamPoints = GUIManager:CreateTextItem()
     self.enemyTeamPoints:SetFontName(kTextFontName)
@@ -204,7 +204,7 @@ function GUIFlagScore:Initialize()
     
     self.enemyTeamIcon:AddChild(self.enemyTeamPoints)
     
-    // Carrier
+    -- Carrier
 
     self.enemyTeamCarrier = GUIManager:CreateTextItem()
     self.enemyTeamCarrier:SetFontName(kTextFontName)
@@ -339,12 +339,12 @@ function GUIFlagScore:Update(deltaTime)
         
         if hours == 0 and minutes == 0 then         
 
-            // blinking!
+            -- blinking!
             if seconds % 2 == 1  then
                 self.timeRemaining:SetColor(kRedColor)
             end
 
-            // hide if no timer active (or ran out).
+            -- hide if no timer active (or ran out).
             if seconds == 0 then 
                 self.timeRemaining:SetIsVisible(false)
             end     

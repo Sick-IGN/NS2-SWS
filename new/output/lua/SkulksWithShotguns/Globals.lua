@@ -1,1 +1,0 @@
-kDefaultAlienDrifterVariant = 5
